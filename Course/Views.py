@@ -13,7 +13,7 @@ def take_exam(request, lesson_id):
     return render(request, 'course/take_exam.html', {'lesson': lesson, 'questions': questions})
 
 @login_required
-def submit_exam(request, course_id, lesson_id):
+def submit(request, course_id, lesson_id):
     course = get_object_or_404(Course, id=course_id)
     lesson = get_object_or_404(Lesson, id=lesson_id)
     questions = lesson.questions.all()
@@ -49,7 +49,13 @@ def submit_exam(request, course_id, lesson_id):
         'possible': total_points,
     })
 
-def show_exam_results(request, course_id, submission_id):
+# ADD THIS METHOD - is_get_score was missing
+def is_get_score(submission):
+    if submission.selected_choice.is_correct:
+        return submission.question.points
+    return 0
+
+def show_exam_result(request, course_id, submission_id):
     course = get_object_or_404(Course, id=course_id)
     submissions = Submission.objects.filter(id=submission_id, user=request.user)
     selected_ids = [str(sub.selected_choice.id) for sub in submissions]
@@ -59,8 +65,7 @@ def show_exam_results(request, course_id, submission_id):
     
     for sub in submissions:
         possible_score += sub.question.points
-        if sub.is_correct:
-            total_score += sub.question.points
+        total_score += is_get_score(sub)  # Using the is_get_score function
     
     grade = (total_score / possible_score * 100) if possible_score > 0 else 0
     
